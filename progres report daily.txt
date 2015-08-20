@@ -1,0 +1,14 @@
+150819
+received the shv file of jabodetabek
+install topojson (done)
+install gdal-1.9.2 (to get ogr2ogr) - done
+help: http://askubuntu.com/questions/191390/how-to-use-sudo-command-to-install-tar-gz
+download : http://download.osgeo.org/gdal/
+converting shv to json - done
+call the GeoJson file into the d3js (image too small canot use the scale function) -- done
+
+150820
+add the file to github under name d3js.git -- done
+
+
+

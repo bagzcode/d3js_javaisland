@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>D3: Jakarta</title>
+        <title>D3: Project Birds Mapping</title>
         <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
         <style type="text/css">
 
@@ -75,7 +75,7 @@
 
             d3.json("jakarta.json", function(json) {
 				//Get data from CSV file
-				
+				//The d3.csv() function does both the loading and the parsing without giving you a chance to intervene so we need to do this
 				d3.xhr('Movement.csv').get(function (err, response) {
 				  // to delete the first row and get the header
 				  var dirtyCSV = response.responseText;
@@ -142,7 +142,7 @@
                        .on("mouseout", function(d){
                                 d3.select(this)
                                         .style("fill", setNormalColor(d));
-                                d3.select("#tooltip").classed("hidden", true);	//piilota
+                                d3.select("#tooltip").classed("hidden", true);	//hide
                             });
 
 
@@ -165,7 +165,7 @@
                     }
             }
             
-        // generate SVG for second Geojson MAP  
+        // generate SVG for second Geojson MAP (java island)  
         //Width and height
             var w2 = 833;
             var h2 = 264;

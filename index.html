@@ -3,14 +3,48 @@
     <head>
         <meta charset="utf-8">
         <title>D3: Project Birds Mapping</title>
-        <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+        <script type="text/javascript" src="../d3/d3.min.js"></script>
         <style type="text/css">
+			body {
+			  background-color: #faf5df;
+			}
+			text {
+			  font-size: 12px;
+			  font-family: "Sawasdee", "URW Gothic L", sans;
+			  //fill: white;
+			}
+			text.label {
+			  font-size: 18px;
+			}
+			text.expl {
+			  font-size: 16px;
+			}
+			text.title {
+			  font-size: 24px;
+			  font-weight: bold;
+			}
+			text.active {
+			  fill: #dd2f00;
+			}
 
-            text {
-                font-family: sans-serif;
-                font-size: 12px;
-                fill: white;
-            }
+			.axis {
+			  fill: none;
+			  stroke: #222;
+			}
+
+			path {
+			  stroke: #554508;
+			}
+			path.pointer {
+			  stroke: #222;
+			}
+			line {
+			  stroke: #222;
+			}
+			rect {
+			  stroke: #222;
+			}
+            
 
             path:hover {
 				fill: orange;
@@ -50,105 +84,156 @@
 		</div>
 
         <script type="text/javascript">
-            var jsond = 0;
-            //Width and height
-            var w = 833;
-            var h = 300;
+        //var global
             var color = d3.scale.quantize()
                     .range(["rgb(237,248,233)", "rgb(186,228,179)",
                      "rgb(116,196,118)", "rgb(49,163,84)","rgb(0,109,44)"])
                     .domain([0, 100]);
-
-            var svg = d3.select("body")
+            
+            //Width and height for jabodetabek
+            var w = 833, h = 600,
+            	svg = d3.select("body")
                         .append("svg")
                         .attr("width", w)
-                        .attr("height", h);
+                        .attr("height", h),
+            	projection = d3.geo.mercator()
+                               .rotate([-107,6.8,0])
+    						   .scale(9500*2)
+                               .translate([w/2, h/2]),                 
+            	path = d3.geo.path().projection(projection);
+            
+            //Width and height for java island
+            var w2 = 833, h2 = 264,
+             	svg2 = d3.select("body")
+                         .append("svg")
+                         .attr("width", w2)
+                         .attr("height", h2),
+            	projection2 = d3.geo.mercator()
+                                .rotate([-112.3,2.7,0])
+    							.scale(3500)
+                                .translate([w2/2, h2/2]),                  
+            	path2 = d3.geo.path().projection(projection2);
+            
+            
+            var margin = 25,
+				wscale = 0,
+				defs = svg.append("svg:defs"),
+				canvas = svg.append("svg:g").attr("height", h - 5*margin).attr("transform", "translate("+margin+","+3*margin+")"),
+				clistw = 250,
+				clistw2 = 833,
+				clist = canvas.append("svg:g").attr("width", clistw),
+				label = canvas.append("svg:g").attr("transform", "translate("+clistw+",0)"),
+				map = canvas.append("svg:svg").attr("x", clistw).append("svg:g")
+				map2 = canvas.append("svg:svg").attr("width", clistw2);
 
-            var projection = d3.geo.mercator()//transverseMercator()
-                                .rotate([-106,6.2,0])
-    							.scale(7000*2)
-                                .translate([w/2, h/2])
-                               
-
-            var path = d3.geo.path()
-                 .projection(projection);
-
-            d3.json("jakarta.json", function(json) {
-				//Get data from CSV file
-				//The d3.csv() function does both the loading and the parsing without giving you a chance to intervene so we need to do this
-				d3.xhr('Movement.csv').get(function (err, response) {
-				  // to delete the first row and get the header
-				  var dirtyCSV = response.responseText;
-				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
-				  var data = d3.csv.parse(cleanCSV);
+			var data = [];
+				javjson = [];
+			
+			//set the interface
+			//added title and other information for the bar graph
+            svg.append("svg:text")
+				.classed("title", true)
+				.attr("text-anchor", "start")
+				.attr("x", 1.5*margin)
+				.attr("y", 1*margin)
+				.text("Spreading birds in JABODETABEK and JAVA Districts");
+			svg.append("svg:text")
+				.attr("text-anchor", "start")
+				.attr("y", h-5)
+				.text("Spreading birds data 2015");
+			svg.append("svg:text")
+				.attr("text-anchor", "end")
+				.attr("x", w)
+				.attr("y", h-5)
+				.text("@Urremote.com 2015");
 				
-                //enable this when header csv in the first row
-                //d3.csv("test.csv", function(data){
-                    color.domain([
-                        d3.min(data, function(d) { return d.weekly_volume; }),
-                        d3.max(data, function(d) { return d.weekly_volume; })
-                        ]);
-                    //console.log(data.length);
-                    for (var i = 0; i < data.length; i++)
-                    {
-                        var dataState = data[i].CY_district;
-                        var dataValue = parseInt(data[i].weekly_volume);
-                        //console.log(dataValue)
-                         //Find the corresponding state inside the GeoJSON
-                        for (var j = 0; j < json.features.length; j++)
-                        {
-                            var jsonState = json.features[j].properties.KAB_KOTA;
-                            //console.log(jsonState)
-                            if (dataState == jsonState ) {
-                                //Copy the data value into the JSON
-                                json.features[j].properties.value = dataValue;
-                                //Stop looking through the JSON
-                                break;
-                            }
-                        }
-                    }
+			//create scale bar graph
+			var scale = d3.scale.linear().domain([0, 100]).range([h - h2 - 5*margin, 0]),
+				axis = d3.svg.axis().scale(scale).ticks(10).orient("left");
+			clist.append("svg:rect")
+				.attr("fill", "url(#grad)")
+				.attr("x", 30)
+				.attr("width", 30)
+				.attr("height", h - h2 - 5*margin);
+			clist.append("svg:g")
+				.attr("transform", "translate(30,0)")
+				.classed("axis", true)
+				.call(axis);
+			clist.append("svg:text")
+				.classed("expl", true)
+				.attr("transform", "translate(0," + (h - h2 - 4*margin) + ")")
+				.text("% of total birds populations")
+			
+			//add color on the bar    
+            var grad = defs.append("svg:linearGradient")
+				.attr("id", "grad")
+				.attr("x1", "100%")
+				.attr("x2", "100%")
+				.attr("y1", "100%")
+				.attr("y2", "0%")
+				.attr("spreadMethod", "pad");
+			grad.append("svg:stop")
+				.attr("offset", "0%")
+				.attr("stop-color", "rgb(237,248,233)");
+			grad.append("svg:stop")
+				.attr("offset", "100%")
+				.attr("stop-color", "rgb(0,109,44)");
+            
+            function updateMapJKT(js) {
+				if(map.selectAll("path").empty()) {
+                    map.selectAll("path")
+						.data(js.features)
+						.enter()
+						.append("path")
+						.attr("d", path)
+						.style("fill", setNormalColor)
+						.style("stroke", "rgb(0,109,44)")
+						.on("mouseover", function(d)
+							{
+								d3.select(this)
+										.style("fill", "orange");
 
-                    
-                    svg.selectAll("path")
-                       .data(json.features)
-                       .enter()
-                       .append("path")
-                       .attr("d", path)
-                       .style("fill", setNormalColor)
-                       .style("stroke", "rgb(0,109,44)")
-                       .on("mouseover", function(d)
-                            {
-                                d3.select(this)
-                                        .style("fill", "orange");
+								var coordinates = [0, 0];
+								coordinates = d3.mouse(this);
+		
+								var target = d3.select("#tooltip")
+									.style("left", coordinates[0] + "px")
+									.style("top", coordinates[1] + "px");
 
+								target.select("#daerah")
+									.text(d.properties.KAB_KOTA);
 
-                                var coordinates = [0, 0];
-                                coordinates = d3.mouse(this);
-                                //näytä tooltip
-                                var target = d3.select("#tooltip")
-                                    .style("left", coordinates[0] + "px")
-                                    .style("top", coordinates[1]-80 + "px");
+								target.select("#info")
+									.text("Volume of Birds: " + d.properties.value + " (" + Math.round(d.properties.value)/1000 + " % of Populations");
+								
+								//Show tooltip
+								d3.select("#tooltip").classed("hidden", false);
 
-                                target.select("#daerah")
-                                    .text(d.properties.KAB_KOTA);
-
-                                target.select("#info")
-                                    .text("Volume of Birds: " + d.properties.value );
-
-			   		//Show tooltip
-			   		d3.select("#tooltip").classed("hidden", false);
-
-                            })
-                       .on("mouseout", function(d){
-                                d3.select(this)
-                                        .style("fill", setNormalColor(d));
-                                d3.select("#tooltip").classed("hidden", true);	//hide
-                            });
-
-
-                    
-                });
-            });
+										})
+						.on("mouseout", function(d){
+									//console.log(d);
+									d3.select(this)
+											.style("fill", setNormalColor(d));
+									d3.select("#tooltip").classed("hidden", true);	//hide
+								});	
+					
+				} else {
+					//console.log(js)
+					label.selectAll("text").remove();
+					label.append("svg:text")
+						.attr("y", -10)
+						.classed("label", true)
+						.text(js.properties.KAB_KOTA + " has : " + Math.round(js.properties.value)/1000 + "% of total birds populations");
+					map.selectAll("path")
+						//.attr("fill", "none")
+						.style("fill", setNormalColor)
+						.attr("stroke-width", 1);
+					map.selectAll("path")
+						.data([js], function(d) { return d.properties.value; })
+						.style("fill", "orange")//color(js.properties.value))
+						.attr("stroke-width", 2);
+				}	
+			}
 
             var setNormalColor = function(d)
             {
@@ -160,42 +245,20 @@
                             return color(value);
                     } else {
                             //If value is undefined…
-                        //console.log("Undefined: " + d.properties.text + " " + value)
-                            return "blue";
+                        	return "grey";
                     }
             }
-            
-        // generate SVG for second Geojson MAP (java island)  
-        //Width and height
-            var w2 = 833;
-            var h2 = 264;
-            var color = d3.scale.quantize()
-                    .range(["rgb(237,248,233)", "rgb(186,228,179)",
-                     "rgb(116,196,118)", "rgb(49,163,84)","rgb(0,109,44)"])
-                    .domain([0, 100]);
 
-            var svg2 = d3.select("body")
-                        .append("svg")
-                        .attr("width", w2)
-                        .attr("height", h2);
-
-            var projection2 = d3.geo.mercator()//transverseMercator()
-                                .rotate([-112,6.8,0])
-    							.scale(3400)
-                                .translate([w2/2, h2/2])
-                               
-
-            var path2 = d3.geo.path()
-                 .projection(projection2);
-
-            d3.json("Java_District.geojson", function(json) {
-				//Get data from CSV file
+            //added jabodetabek map
+            d3.json("jakarta.json", function(json) {
 				
+				//Get data from CSV file
+				//The d3.csv() function does both the loading and the parsing without giving you a chance to intervene so we need to do this
 				d3.xhr('Movement.csv').get(function (err, response) {
 				  // to delete the first row and get the header
 				  var dirtyCSV = response.responseText;
 				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
-				  var data = d3.csv.parse(cleanCSV);
+				  data = d3.csv.parse(cleanCSV);
 				
                 //enable this when header csv in the first row
                 //d3.csv("test.csv", function(data){
@@ -222,10 +285,97 @@
                             }
                         }
                     }
+				
+				//add information of Kab_Kota from JABODETABEK map into the bar chart list
+				var areadistrict = json.features.filter(function(d, i) {
+						//console.log(d.properties.value);
+						return d.properties.value != null;
+						}).sort(function(a, b) { return b.properties.value - a.properties.value; }),
+					ch = (h - h2 - 5*margin) / (areadistrict.length+1);
+				clist.selectAll("text.label")
+					.data(areadistrict)
+					.enter()
+					.append("svg:text")
+					.classed("label", true)
+					.attr("transform", function(d, i) {
+							return "translate(100," + ((i+1) * ch + 5) + ")";
+						})
+					.text(function(d) { return d.properties.KAB_KOTA; })
+					.on("mouseover", function(d) {
+							d3.selectAll(".active").classed("active", false);
+							d3.select(d3.event.target).classed("active", true);
+							var check_kota = d.properties.KAB_KOTA;
+							updateMapJKT(d);
+							updateMapJAVA(javjson.features.filter(function(d, i) {
+								//console.log(check_kota);
+								return d.properties.KABKOT == check_kota;})); 	
+						})
+					.on("mouseout", function(d){
+							d3.selectAll(".active").classed("active", false);
+							map.selectAll("path")
+								.style("fill", setNormalColor)
+								.style("stroke", "rgb(0,109,44)");
+							map2.selectAll("path")
+								.style("fill", setNormalColor)
+								.style("stroke", "rgb(0,109,44)");
+							label.selectAll("text").remove();
+						});
+				
+				//draw the connector line between the area and bar chart		
+				var l = d3.svg.line();
+					clist.selectAll("path.pointer")
+						.data(areadistrict)
+						.enter()
+						.append("svg:path")
+						.classed("pointer", true)
+						.attr("fill", "none")
+						.attr("d", function(d, i) {
+								//console.log(i)
+								var s = [25, scale(d.properties.value / 1000)],
+									m = [65, scale(d.properties.value / 1000)],
+									e = [95, (i+1) * ch];
+									//console.log(s)
+								return l([s, m, e]);
+							});
+				
+				updateMapJKT(json);
 
                     
-                    svg2.selectAll("path")
-                       .data(json.features)
+				});
+            });
+
+            
+        // generate SVG for second Geojson MAP (java island)  
+           d3.json("Java_District.geojson", function(json) {
+				
+				//match data between CSV file and map				
+				for (var i = 0; i < data.length; i++)
+				{
+					var dataState = data[i].CY_district;
+					var dataValue = parseInt(data[i].weekly_volume);
+					//console.log(dataValue)
+					 //Find the corresponding state inside the GeoJSON
+					for (var j = 0; j < json.features.length; j++)
+					{
+						var jsonState = json.features[j].properties.KABKOT;
+						//console.log(jsonState)
+						if (dataState == jsonState ) {
+							//Copy the data value into the JSON
+							json.features[j].properties.value = dataValue;
+							//Stop looking through the JSON
+							break;
+						}
+					}
+				}
+
+             javjson = json;       
+             updateMapJAVA(json);       
+            }); 
+            
+            function updateMapJAVA(js) {
+				if(map2.selectAll("path").empty()) {
+                    map2.selectAll("path")
+                       .data(js.features)
                        .enter()
                        .append("path")
                        .attr("d", path2)
@@ -233,37 +383,38 @@
                        .style("stroke", "rgb(0,109,44)")
                        .on("mouseover", function(d)
                             {
-                                d3.select(this)
-                                        .style("fill", "red");
-
+                                d3.select(this).style("fill", "orange");
 
                                 var coordinates = [0, 0];
                                 coordinates = d3.mouse(this);
-                                //näytä tooltip
+                                //console.log(coordinates)
                                 var target = d3.select("#tooltip")
                                     .style("left", coordinates[0] + "px")
-                                    .style("top", coordinates[1]-80 + "px");
+                                    .style("top", coordinates[1] + "px");
 
-                                target.select("#daerah")
-                                    .text(d.properties.KAB_KOTA);
+                                target.select("#daerah").text(d.properties.KABKOT);
+                                target.select("#info").text("Province: " + d.properties.PROVINSI  );
+								//Show tooltip
+								d3.select("#tooltip").classed("hidden", false);
 
-                                target.select("#info")
-                                    .text("Volume of Birds: " + d.properties.value );
-
-			   		//Show tooltip
-			   		d3.select("#tooltip").classed("hidden", false);
-
+							})
+                    	.on("mouseout", function(d){
+                                d3.select(this).style("fill", setNormalColor(d));
+                                d3.select("#tooltip").classed("hidden", true);
                             })
-                       .on("mouseout", function(d){
-                                d3.select(this)
-                                        .style("fill", setNormalColor(d));
-                                d3.select("#tooltip").classed("hidden", true);	//piilota
-                            });
-
-
-                    
-                });
-            });  
+					
+				} else {
+					//console.log(js[0].properties.KABKOT)
+					map2.selectAll("path")
+						//.attr("fill", "none")
+						.style("fill", setNormalColor)
+						.attr("stroke-width", 1);
+					map2.selectAll("path")
+						.data([js[0]], function(d) { return d.properties.value; })
+						.style("fill", "orange")//color(js.properties.value))
+						.attr("stroke-width", 2);
+				}	
+			} 
         </script>
 
     </body>

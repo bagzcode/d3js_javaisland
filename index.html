@@ -106,6 +106,12 @@
 			#cells g:hover path.arc {
 			  display: inherit;
 			}
+			
+			.background {
+			  fill: none;
+			  pointer-events: all;
+			}
+			
         </style>
     </head>
     <body>
@@ -121,42 +127,94 @@
                      "rgb(116,196,118)", "rgb(49,163,84)","rgb(0,109,44)"])
                     .domain([0, 100]);
             
+            var margin = 25,
+				width = window.innerWidth - margin,
+				height = window.innerHeight - margin;
+				if (height < 800) { height = 800 }
+			var	cscale = d3.scale.linear().domain([0, 1])
+                		.range(["#fae893", "#756518"]),
+				proj = d3.geo.equirectangular()
+							.scale(1)
+							.translate([0,0]),
+				path = d3.geo.path().projection(proj),
+				wscale = 0,
+				svg = d3.select("body")
+					.append("svg:svg")
+					.attr("height", height)
+					.attr("width", width)
+					.attr("border",1),
+				defs = svg.append("svg:defs"),
+				canvas = svg.append("svg:g")
+					.attr("height", height - 5*margin)
+					.attr("transform", "translate("+margin+","+3*margin+")"),
+				clistw = 250,
+				clisth = 300,
+				jktx = 400,
+				jktw = 600,
+				jkth = 340,
+				jww = 1000,
+				jwh = 350,
+				clist = canvas.append("svg:g")
+					.attr("width", clistw),
+				label = canvas.append("svg:g")
+					.attr("transform", "translate("+clistw+",0)"),
+				map = canvas.append("svg:svg")
+					.attr("x", jktx)
+					.attr("width", jktw)
+					.attr("height", jkth)
+					.append("svg:g"),
+				map2 = canvas.append("svg:svg")
+					.attr("x", 0)
+					.attr("y", jkth)
+					.attr("width", jww)
+					.attr("height", jwh)
+					.append("svg:g")
+					
+
             //Width and height for jabodetabek
-            var w = 833, h = 700,
-            	svg = d3.select("body")
-                        .append("svg")
-                        .attr("width", w)
-                        .attr("height", h),
+            	
             	projection = d3.geo.mercator()
-                               .rotate([-107,6.94,0])
+                               .rotate([-105.5,5.85,0])
     						   .scale(9500*2)
-                               .translate([w/2, h/2]),                 
+                               .translate([0, 0]),                 
             	path = d3.geo.path().projection(projection);
+            	
+            	var zoom = d3.behavior.zoom()
+							.translate(projection.translate())
+							.scale(projection.scale())
+							.scaleExtent([10 * height, 150 * height])
+							.on("zoom", zoomed);
+							
+				var gjkt = map.append("g")
+    				.call(zoom);
+    				
+    			gjkt.append("rect")
+					.attr("class", "background")
+					.attr("width", jktw)
+					.attr("height", jkth);
             
             //Width and height for java island
-            var w2 = 833, h2 = 364,
-             	svg2 = d3.select("body")
-                         .append("svg")
-                         .attr("width", w2)
-                         .attr("height", h2),
+           
             	projection2 = d3.geo.mercator()
-                                .rotate([-110,4.4,0])
-    							.scale(5000)
-                                .translate([w2/2, h2/2]),                  
+                                .rotate([-105,5.85,0])
+    							.scale(6000)
+                                .translate([0, 0]),                  
             	path2 = d3.geo.path().projection(projection2);
             
-            
-            var margin = 25,
-				wscale = 0,
-				defs = svg.append("svg:defs"),
-				canvas = svg.append("svg:g").attr("height", h - 5*margin).attr("transform", "translate("+margin+","+3*margin+")"),
-				clistw = 250,
-				clistw2 = 833,
-				clist = canvas.append("svg:g").attr("width", clistw),
-				label = canvas.append("svg:g").attr("transform", "translate("+clistw+",0)"),
-				map = canvas.append("svg:svg").attr("x", clistw).append("svg:g")
-				map2 = canvas.append("svg:svg").attr("width", clistw2);
-
+            	var zoom2 = d3.behavior.zoom()
+							.translate(projection2.translate())
+							.scale(projection2.scale())
+							.scaleExtent([10 * height, 150 * height])
+							.on("zoom", zoomed2);
+							
+				var gjw = map2.append("g")
+    				.call(zoom2);
+    				
+    			gjw.append("rect")
+					.attr("class", "background")
+					.attr("width", jww)
+					.attr("height", jwh);
+			
 			var data = [],
 				javjson = [],
 				cities = [], 
@@ -189,29 +247,29 @@
 				.text("Weekly Volume Distribution of Birds into JABODETABEK ");
 			svg.append("svg:text")
 				.attr("text-anchor", "start")
-				.attr("y", h-5)
+				.attr("y", height-5)
 				.text("Spreading birds data 2015");
 			svg.append("svg:text")
 				.attr("text-anchor", "end")
-				.attr("x", w)
-				.attr("y", h-5)
+				.attr("x", width)
+				.attr("y", height-5)
 				.text("@Urremote.com 2015");
 				
 			//create scale bar graph
-			var scale = d3.scale.linear().domain([0, 100]).range([h - h2 - 5*margin, 0]),
+			var scale = d3.scale.linear().domain([0, 100]).range([clisth, 0]),
 				axis = d3.svg.axis().scale(scale).ticks(10).orient("left");
 			clist.append("svg:rect")
 				.attr("fill", "url(#grad)")
 				.attr("x", 30)
 				.attr("width", 30)
-				.attr("height", h - h2 - 5*margin);
+				.attr("height", clisth);//height - h2 - 5*margin);
 			clist.append("svg:g")
 				.attr("transform", "translate(30,0)")
 				.classed("axis", true)
 				.call(axis);
 			clist.append("svg:text")
 				.classed("expl", true)
-				.attr("transform", "translate(0," + (h - h2 - 4*margin) + ")")
+				.attr("transform", "translate(0," + (clisth + margin) + ")")
 				.text("% of total weekly volume of birds")
 			
 			//add color on the bar    
@@ -231,7 +289,8 @@
             
             function updateMapJKT(js) {
 				if(map.selectAll("path").empty()) {
-                    map.selectAll("path")
+                    gjkt.append("g")
+                    	.selectAll("path")
 						.data(js.features)
 						.enter()
 						.append("path")
@@ -247,14 +306,13 @@
 									coordinates = d3.mouse(this);
 		
 								var target = d3.select("#tooltip")
-									.style("left", coordinates[0] + "px")
-									.style("top", coordinates[1] + "px");
+										.style("left", coordinates[0] + "px")
+										.style("top", coordinates[1] + "px");
+									target.select("#daerah")
+										.text(d.properties.KAB_KOTA);
 
-								target.select("#daerah")
-									.text(d.properties.KAB_KOTA);
-
-								target.select("#info")
-									.text("Weekly Volume of Birds: " + d.properties.value + " (" + Math.round(d.properties.value)/1000 + " % )");
+									target.select("#info")
+										.text("Weekly Volume of Birds: " + d.properties.value + " (" + Math.round(d.properties.value)/1000 + " % )");
 								
 								//Show tooltip
 								d3.select("#tooltip").classed("hidden", false);
@@ -263,10 +321,11 @@
 						.on("mouseout", function(d){
 									d3.select(this).style("fill", setNormalColor(d));
 									d3.select("#tooltip").classed("hidden", true);	//hide
-								});	
+								})
+						.on("click", function(d){clicked(d,jktw,jkth,gjkt)});	
 					
 				} else {
-//console.log(js)
+//console.log(js.properties)
 					label.selectAll("text").remove();
 					label.append("svg:text")
 						.attr("y", -10)
@@ -277,7 +336,7 @@
 						.style("fill", setNormalColor)
 						.attr("stroke-width", 1);
 					map.selectAll("path")
-						.data([js], function(d) { return d.properties.value; })
+						.data([js], function(d) { return d.properties.OBJECTID; })
 						.style("fill", "orange")//color(js.properties.value))
 						.attr("stroke-width", 2);
 				}	
@@ -285,7 +344,7 @@
 
             function updateMapJAVA(js) {
 				if(map2.selectAll("path").empty()) {
-                    map2.selectAll("path")
+                    gjw.append("g").selectAll("path")
                        .data(js.features)
                        .enter()
                        .append("path")
@@ -300,7 +359,7 @@
                                 	coordinates = d3.mouse(this);
                                 var target = d3.select("#tooltip")
                                     .style("left", coordinates[0] + "px")
-                                    .style("top", coordinates[1] + "px");
+                                    .style("top", coordinates[1] + jkth + "px");
 
                                 target.select("#daerah").text(d.properties.KABKOT);
                                 target.select("#info").text("Province: " + d.properties.PROVINSI  );
@@ -311,7 +370,8 @@
                     	.on("mouseout", function(d){
                                 d3.select(this).style("fill", setNormalColor(d));
                                 d3.select("#tooltip").classed("hidden", true);
-                            });
+                            })
+                        .on("click", function(d){clicked(d,jww,jwh,gjw)});;
 					
 				} else {
 					map2.selectAll("path")
@@ -320,7 +380,7 @@
 						.attr("stroke-width", 1);
 					map2.selectAll("path")
 						.data([js[0]], function(d) { 
-							return d.properties.value; })
+							return d.properties.OBJECTID; })
 						.style("fill", "orange")//color(js.properties.value))
 						.attr("stroke-width", 2);
 				}	
@@ -340,10 +400,41 @@
                     }
             }
             
-            //show info
-            var showInfo = function(cities, whmap, pos, color)
+            function clicked(d,w,h, gpath) 
+            {
+
+				var centroid = path.centroid(d),
+				  translate = projection.translate();
+
+				projection.translate([
+				translate[0] - centroid[0] + w / 2,
+				translate[1] - centroid[1] + h / 2
+				]);
+
+				zoom.translate(projection.translate());
+
+				gpath.selectAll("path").transition()
+				  .duration(700)
+				  .attr("d", path);
+			}
+
+			function zoomed() 
 			{
-//console.log(cities)				
+//console.log(d3.event)
+			  projection.translate(d3.event.translate).scale(d3.event.scale);
+			  gjkt.selectAll("path").attr("d", path);
+			}
+			
+			function zoomed2() 
+			{
+//console.log(d3.event)
+			  projection2.translate(d3.event.translate).scale(d3.event.scale);
+			  gjw.selectAll("path").attr("d", path2);
+			}
+            
+            //show info
+            var showCity = function(cities, whmap, pos, color)
+			{		
 				
 				/* Define the data for the circles */
 				var elem = whmap.selectAll("circle")
@@ -352,6 +443,7 @@
 				/*Create and place the "blocks" containing the circle and the text */  
 				var elemEnter = elem.enter()
 					.append("g")
+					//.attr("transform", function(d,i){return "translate("+pos[i][0]+","+pos[i][1]+" )"})
 				
 				/*Create the circle for each block */
 				var circle = elemEnter.append("circle")
@@ -363,16 +455,14 @@
 									.sort(function(a, b) { return countByCity[b.Name] - countByCity[a.Name]; })
 
 				/* Create the text for each block */
-				elemEnter.append("text")
+				/*elemEnter.append("text")
 						.text(function(d){
-							console.log(d.Name)
 							return d.Name;})
 						.attr({
 							  "alignment-baseline": "middle",
-							  "text-anchor": "middle",
-							  "color" : "red"
+							  "text-anchor": "middle"
 							})
-			
+				*/
 			}
             
             var getOriginCity = function (d) 
@@ -403,17 +493,43 @@
 					
 			}
 			
-			var drawthecity = function (cities, whmap, pos, color)
+			var drawthecity = function (data_value, whmap, pos, color)
 			{
+//console.log(data_value)
 				whmap.selectAll("circle")
-						.data(cities)
+						.data(data_value.features)
 						.enter().append("svg:circle")
 						.style("stroke", "gray")
 						.style("fill", color)
-						.attr("cx", function(d, i) { return pos[i][0]; })
-						.attr("cy", function(d, i) { return pos[i][1]; })
+						/*.attr("cx", function(d, i) 
+							{ 
+								//if (pos == [])
+								//{
+//console.log(d.properties)
+									return d.properties.longitude;
+								//}
+								//else
+								//{
+									//return pos[i][0];
+								//} 
+							})
+						.attr("cy", function(d, i) 
+							{ 
+								//if (pos == [])
+								//{
+									return d.properties.latitude;
+								//}
+								//else
+								//{
+									//return pos[i][1];
+								//} 
+							})*/
+						.attr('transform', function (d) {
+								return 'translate(' +
+									projection2([d.properties.longitude, d.properties.latitude]) +
+								')'})
 						.attr("r", 5)//function(d, i) { return Math.sqrt(countByCity[d.Name]); })
-						.sort(function(a, b) { return countByCity[b.Name] - countByCity[a.Name]; })
+						//.sort(function(a, b) { return countByCity[b.Name] - countByCity[a.Name]; })
 						
 			}
 			
@@ -449,27 +565,27 @@
 							//.enter()
 							.append("svg:g");
 						
-
+/*
 						g.selectAll("path.arc")
 							.data(function(d) { 
 								return linksByOrigin[d.Name] || []; })
 							.enter().append("svg:path")
 							.attr("class", "arc")
 							.attr("d", function(d) { return path(arc(d)); });
-					
+*/					
 						//generate the circles
-						drawthecity(cities,shape,pos,citycolor);
+						showCity(cities,shape,pos,citycolor);
 						
 						shape.selectAll("circle")
 							.on("mouseover", function(d) {
-//console.log(getOriginCity(d));
+
 								getOriginCity(d);
 								
 								d3.csv("indonesia_java.csv", function(cities) {
 									cities = cities.filter(function(city) {
-//console.log(unique_areatarget.indexOf(city.Name))
+
 										  if (unique_areatarget.indexOf(city.Name)!=-1) {
-//console.log(city.Name)
+
 											var location = [+city.Longitude, +city.Latitude];
 											locationByCity[city.Name] = location;
 											positions2.push(projection2(location));
@@ -488,7 +604,7 @@
 											circles2.selectAll("circle").remove();
 											//drawthecity(cities, circles2, positions2, "blue")
 											//cityextraction(json, positions2, projection2, circles2, "blue");
-											showInfo(cities, circles2, positions2, "blue")
+											showCity(cities, circles2, positions2, "blue")
 										});
 									
 								});
@@ -542,57 +658,62 @@
                         }
                     }
 				
-				//add information of Kab_Kota from JABODETABEK map into the bar chart list
-				var areadistrict = json.features.filter(function(d, i) {
-						return d.properties.value != null;
-						}).sort(function(a, b) { return b.properties.value - a.properties.value; }),
-					ch = (h - h2 - 5*margin) / (areadistrict.length+1);
-				clist.selectAll("text.label")
-					.data(areadistrict)
-					.enter()
-					.append("svg:text")
-					.classed("label", true)
-					.attr("transform", function(d, i) {
-							return "translate(100," + ((i+1) * ch + 5) + ")";
-						})
-					.text(function(d) { return d.properties.KAB_KOTA; })
-					.on("mouseover", function(d) {
-							d3.selectAll(".active").classed("active", false);
-							d3.select(d3.event.target).classed("active", true);
-							var check_kota = d.properties.KAB_KOTA;
-							updateMapJKT(d);
-							updateMapJAVA(javjson.features.filter(function(d, i) {
-								return d.properties.KABKOT == check_kota;})); 	
-						})
-					.on("mouseout", function(d){
-							d3.selectAll(".active").classed("active", false);
-							map.selectAll("path")
-								.style("fill", setNormalColor)
-								.style("stroke", "rgb(0,109,44)");
-							map2.selectAll("path")
-								.style("fill", setNormalColor)
-								.style("stroke", "rgb(0,109,44)");
-							label.selectAll("text").remove();
-						});
-				
-				//draw the connector line between the area and bar chart		
-				var l = d3.svg.line();
-					clist.selectAll("path.pointer")
+					//add information of Kab_Kota from JABODETABEK map into the bar chart list
+					var areadistrict = json.features.filter(function(d, i) {
+							return d.properties.value != null;
+							}).sort(function(a, b) { return b.properties.value - a.properties.value; }),
+						ch = clisth / (areadistrict.length+1);
+					clist.selectAll("text.label")
 						.data(areadistrict)
 						.enter()
-						.append("svg:path")
-						.classed("pointer", true)
-						.attr("fill", "none")
-						.attr("d", function(d, i) {
-								var s = [25, scale(d.properties.value / 1000)],
-									m = [65, scale(d.properties.value / 1000)],
-									e = [95, (i+1) * ch];
-								return l([s, m, e]);
+						.append("svg:text")
+						.classed("label", true)
+						.attr("transform", function(d, i) {
+								return "translate(100," + ((i+1) * ch + 5) + ")";
+							})
+						.text(function(d) { return d.properties.KAB_KOTA; })
+						.on("mouseover", function(d) {
+								d3.selectAll(".active").classed("active", false);
+								d3.select(d3.event.target).classed("active", true);
+								var check_kota = d.properties.KAB_KOTA;
+	//console.log(d.properties)
+								updateMapJKT(d);
+								updateMapJAVA(javjson.features.filter(function(d, i) {
+									return d.properties.KABKOT == check_kota;})); 	
+							})
+						.on("mouseout", function(d){
+								d3.selectAll(".active").classed("active", false);
+								map.selectAll("path")
+									.style("fill", setNormalColor)
+									.style("stroke", "rgb(0,109,44)");
+								map2.selectAll("path")
+									.style("fill", setNormalColor)
+									.style("stroke", "rgb(0,109,44)");
+								label.selectAll("text").remove();
 							});
+				
+					//draw the connector line between the area and bar chart		
+					var l = d3.svg.line();
+						clist.selectAll("path.pointer")
+							.data(areadistrict)
+							.enter()
+							.append("svg:path")
+							.classed("pointer", true)
+							.attr("fill", "none")
+							.attr("d", function(d, i) {
+									var s = [25, scale(d.properties.value / 1000)],
+										m = [65, scale(d.properties.value / 1000)],
+										e = [95, (i+1) * ch];
+									return l([s, m, e]);
+								});
 							
-				cityextraction(json, positions, projection, circles, "red")
-				updateMapJKT(json);       
+					cityextraction(json, positions, projection, circles, "red")
+					updateMapJKT(json);
+					
+				
+				      
 				});
+				 
             });
 
             
@@ -617,7 +738,22 @@
 							break;
 						}
 					}
-				}				
+				}
+				
+				for	 (var i = 0; i < json.features.length; i++)
+				{
+					var centroid_value = path2.centroid(json.features[i]);
+					json.features[i].properties.longitude = centroid_value[0]-38;
+					json.features[i].properties.latitude = 340-centroid_value[1];
+
+					if (json.features[i].properties.KABKOT == "JAKARTA UTARA")
+					{
+//console.log(json)						
+					}
+					 
+				}
+//console.log(json)
+				//drawthecity (json, circles2, positions2 , "brown")		
 				cityextraction(json, positions2, projection2, circles2, "orange");
 				javjson = json;       
              	updateMapJAVA(json);

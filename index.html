@@ -112,6 +112,10 @@
 			  pointer-events: all;
 			}
 			
+			td, th {
+				padding: 1px 4px;
+			}
+			
         </style>
     </head>
     <body>
@@ -221,7 +225,9 @@
 				javjson = [],
 				jakjson = [],
 				cities = [], 
-				unique_areatarget = [];
+				unique_areatarget = [],
+				datamovjav = [],
+				datamovjak = [];
 			
 			var circles = map
 				.attr("id", "circles");
@@ -259,6 +265,7 @@
 				.text("@Urremote.com 2015");
 				
 			//create scale bar graph
+/*			
 			var scale = d3.scale.linear().domain([0, 100]).range([clisth, 0]),
 				axis = d3.svg.axis().scale(scale).ticks(10).orient("left");
 			clist.append("svg:rect")
@@ -289,7 +296,7 @@
 			grad.append("svg:stop")
 				.attr("offset", "100%")
 				.attr("stop-color", "rgb(0,109,44)");
-            
+ */           
             function updateMapJKT(js) {
 				if(map.selectAll("path").empty()) {
                     gjkt.append("g")
@@ -355,6 +362,9 @@
 								//Show tooltip
 								d3.select("#tooltip").classed("hidden", false);
 								
+								//generate table info
+								var JavTable = tabulate(datamovjak, ["CY_district", "district_org_source", "tot"]);
+								
 										})
 						.on("mouseout", function(d){
 									d3.select(this).style("fill", setNormalColor(d));
@@ -365,6 +375,8 @@
 									.style("fill", setNormalColor)
 									.attr("stroke-width", 1);
 									//end removal section
+									
+									d3.select("table").remove();
 								})
 						.on("click", function(d){clicked(d,jktw,jkth,gjkt)});	
 					
@@ -429,7 +441,7 @@
 
 								map.selectAll("path")
 									.data(dt_ori, function(d) { return d.properties.OBJECTID; })
-									.style("fill", "orange")//color(js.properties.value))
+									.style("fill", "red")//color(js.properties.value))
 									.attr("stroke-width", 2);
 								//end of generation
 								
@@ -446,6 +458,9 @@
                                 target.select("#info").text(getInfo2(d));
 								//Show tooltip
 								d3.select("#tooltip").classed("hidden", false);
+								
+								//generate table info
+								var JavTable = tabulate(datamovjav, ["CY_district", "district_org_source", "tot"]);
 
 							})
                     	.on("mouseout", function(d){
@@ -457,6 +472,8 @@
 									.style("fill", setNormalColor)
 									.attr("stroke-width", 1);
 									//end removal section
+								
+								d3.select("table").remove();
                             })
                         .on("click", function(d){clicked(d,jww,jwh,gjw)});;
 					
@@ -647,6 +664,7 @@
 						}
 					}
 				} 
+				datamovjak=unq_rowdat;
 				//print info
 				for (var i = 0; i < unq_rowdat.length; i++)
 				{
@@ -704,7 +722,7 @@
 						}
 					}
 				} 
-
+				datamovjav=unq_rowdat;
 				//print info
 				for (var i = 0; i < unq_rowdat.length; i++)
 				{
@@ -989,7 +1007,7 @@
                             }
                         }
                     }
-				
+/*				
 					//add information of Kab_Kota from JABODETABEK map into the bar chart list
 					var areadistrict = json.features.filter(function(d, i) {
 							return d.properties.value != null;
@@ -1038,15 +1056,66 @@
 										e = [95, (i+1) * ch];
 									return l([s, m, e]);
 								});
-							
+*/							
 					//generate dot points as cities positions
 					//districtextraction(json, positions, projection, circles, "red")
 					jakjson = json;
 					updateMapJKT(json);
-					
-				
-				      
+									      
 				});
+				
+				//load dropdown menu for filter
+				var dispatch = d3.dispatch("load", "countrychange");
+
+				d3.xhr('Movement.csv').get(function (err, response) 
+				{
+				  //if (error) throw error;
+				  var dirtyCSV = response.responseText;
+				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
+				  data = d3.csv.parse(cleanCSV);
+				  var countryById = d3.map();
+				  data.forEach(function (d) 
+				  { 
+					countryById.set(d.CY_district, d); 
+				  });
+				  dispatch.load(countryById);
+				  dispatch.countrychange(countryById.get("PH"));
+			  
+				});
+								
+				dispatch.on("load.menu", function(countryById) {
+				  var select = svg.append("foreignObject")
+				  	.attr("x", 1.5*margin)
+					.attr("y", 2*margin)
+					.attr("width", 500)
+					.attr("height",30)
+					.append("xhtml:body")
+					.append("div")
+					.text("Filter by SPECIES :")
+					.append("select")
+					.on("change", function () { dispatch.countrychange(countryById.get(this.value)); });
+
+				  select.selectAll("option")
+					.data(countryById.values())
+					.enter().append("option")
+					.attr("value", function (d) { return d.species; })
+					.text(function (d) { return d.species; });
+
+				  dispatch.on("countrychange.menu", function (country) {
+					  select.property("value", country)
+					  //loading the value based on the selected data
+					  var svg1 = d3.select("body").append("svg1")
+							.attr("width", width)
+							.attr("height", height)
+					  //end of selection
+
+//console.log(country);
+				  });
+				});
+				//end of drop down
+				
+				
+
 				 
             });
 
@@ -1091,55 +1160,58 @@
 				javjson = json;  
              	updateMapJAVA(json);
 	
-				//load dropdown menu for filter
-				var dispatch = d3.dispatch("load", "countrychange");
-
-				d3.xhr('Movement.csv').get(function (err, response) {
-				  //if (error) throw error;
-				  var dirtyCSV = response.responseText;
-				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
-				  data = d3.csv.parse(cleanCSV);
-				  var countryById = d3.map();
-//console.log(countryById);
-				  data.forEach(function (d) { 
-//console.log(d);
-				  	countryById.set(d.CY_district, d); });
-				  dispatch.load(countryById);
-				  dispatch.countrychange(countryById.get("PH"));
-			  
-				});
-								
-				dispatch.on("load.menu", function(countryById) {
-				  var select = svg
-					.append("div")
-					.attr("x", 15*margin)
-					.attr("y", 1*margin)
-					.append("select")
-					.on("change", function () { dispatch.countrychange(countryById.get(this.value)); });
-
-				  select.selectAll("option")
-					.data(countryById.values())
-					.enter().append("option")
-					.attr("value", function (d) { return d.CY_district; })
-					.text(function (d) { return d.CY_district; });
-
-				  dispatch.on("countrychange.menu", function (country) {
-					  select.property("value", country)
-					  //loading the value based on the selected data
-					  //var svg1 = d3.select("body").append("svg1")
-						//	.attr("width", width)
-						//	.attr("height", height)
-					  //end of selection
-
-//console.log(country);
-				  });
-				});
-				//end of drop down
-
+				
             });
             
             
-           
+           // The table generation function
+		function tabulate(data, columns) 
+		{
+console.log(data)
+			var table = clist.append("foreignObject")
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("width", 250)
+				.attr("height",jktw)
+			.append("xhtml:body")
+					.append("table")
+					.attr("style", "margin-left: 0px")
+					.attr("style", "border: 1")
+					.attr("style", "font-family: Sawasdee, URW Gothic L, sans"),
+				thead = table.append("thead"),
+				tbody = table.append("tbody");
+
+			// append the header row
+			thead.append("tr")
+				.selectAll("th")
+				.data(columns)
+				.enter()
+				.append("th")
+					.text(function(column) { return column; });
+
+			// create a row for each object in the data
+			var rows = tbody.selectAll("tr")
+				.data(data)
+				.enter()
+				.append("tr");
+
+			// create a cell in each row for each column
+			var cells = rows.selectAll("td")
+				.data(function(row) {
+					return columns.map(function(column) {
+						return {column: column, value: row[column]};
+					});
+				})
+				.enter()
+				.append("td")
+				.attr("style", "font-family: Courier") // sets the font style
+					.html(function(d) { return d.value; });
+	
+			return table;
+		}
+
+		
+ 
             
         </script>
 

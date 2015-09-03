@@ -112,8 +112,11 @@
 			  pointer-events: all;
 			}
 			
-			td, th {
-				padding: 1px 4px;
+			table, td, th {
+				padding: 1px 8px;
+				border: 1px solid black;
+				font-size: 14px;
+			  	font-family: "Sawasdee", "URW Gothic L", sans;
 			}
 			
         </style>
@@ -454,7 +457,7 @@
                                     .style("left", coordinates[0] + 80 + "px")
                                     .style("top", coordinates[1] + jkth + "px");
 
-                                target.select("#daerah").text(d.properties.KABKOT+" - Province: " + d.properties.PROVINSI);
+                                target.select("#daerah").text("Origin : "+d.properties.KABKOT+" - Province: " + d.properties.PROVINSI);
                                 target.select("#info").text(getInfo2(d));
 								//Show tooltip
 								d3.select("#tooltip").classed("hidden", false);
@@ -1076,10 +1079,10 @@
 				  var countryById = d3.map();
 				  data.forEach(function (d) 
 				  { 
-					countryById.set(d.CY_district, d); 
+					countryById.set(d.species, d); 
 				  });
 				  dispatch.load(countryById);
-				  dispatch.countrychange(countryById.get("PH"));
+				  //dispatch.countrychange(countryById.get("PH"));
 			  
 				});
 								
@@ -1091,7 +1094,7 @@
 					.attr("height",30)
 					.append("xhtml:body")
 					.append("div")
-					.text("Filter by SPECIES :")
+					.text("Filter by SPECIES : ")
 					.append("select")
 					.on("change", function () { dispatch.countrychange(countryById.get(this.value)); });
 
@@ -1167,7 +1170,7 @@
            // The table generation function
 		function tabulate(data, columns) 
 		{
-console.log(data)
+//console.log(data)
 			var table = clist.append("foreignObject")
 				.attr("x", 0)
 				.attr("y", 0)
@@ -1175,9 +1178,7 @@ console.log(data)
 				.attr("height",jktw)
 			.append("xhtml:body")
 					.append("table")
-					.attr("style", "margin-left: 0px")
-					.attr("style", "border: 1")
-					.attr("style", "font-family: Sawasdee, URW Gothic L, sans"),
+					.attr("style", "margin-left: 0px"),
 				thead = table.append("thead"),
 				tbody = table.append("tbody");
 
@@ -1187,7 +1188,15 @@ console.log(data)
 				.data(columns)
 				.enter()
 				.append("th")
-					.text(function(column) { return column; });
+					.text(function(column) 
+					{ 
+//console.log(column)
+						if (column == "CY_district"){column = "Area Destination"}
+						if (column == "district_org_source"){column = "Area Origin"}
+						if (column == "tot"){column = "Total Weekly Volume"}
+						
+						return column; 
+					});
 
 			// create a row for each object in the data
 			var rows = tbody.selectAll("tr")

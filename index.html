@@ -98,14 +98,6 @@
 			  fill-opacity: .8;
 			  stroke: #fff;
 			}
-
-			#cells.voronoi path.cell {
-			  stroke: brown;
-			}
-
-			#cells g:hover path.arc {
-			  display: inherit;
-			}
 			
 			.background {
 			  fill: none;
@@ -224,8 +216,7 @@
 					.attr("width", jww)
 					.attr("height", jwh);
 			
-			var data = [],
-				javjson = [],
+			var javjson = [],
 				jakjson = [],
 				cities = [], 
 				unique_areatarget = [],
@@ -234,9 +225,6 @@
 			
 			var circles = map
 				.attr("id", "circles");
-
-			var cells = map2
-				.attr("id", "cells");
 				
 			var circles2 = map2
 				.attr("id", "circles2");
@@ -245,255 +233,9 @@
 				  countByCity = {},
 				  locationByCity = {},
 				  positions = [],
-				  positions2 = [];
-				  
-			var descity = 0;
-				  
-			//set the interface
-			//added title and other information for the bar graph
-            svg.append("svg:text")
-				.classed("title", true)
-				.attr("text-anchor", "start")
-				.attr("x", 1.5*margin)
-				.attr("y", 1*margin)
-				.text("Weekly Volume Distribution of Birds into JABODETABEK ");
-			svg.append("svg:text")
-				.attr("text-anchor", "start")
-				.attr("y", height-5)
-				.text("Spreading birds data 2015");
-			svg.append("svg:text")
-				.attr("text-anchor", "end")
-				.attr("x", width)
-				.attr("y", height-5)
-				.text("@Urremote.com 2015");
-				
-			//create scale bar graph
-/*			
-			var scale = d3.scale.linear().domain([0, 100]).range([clisth, 0]),
-				axis = d3.svg.axis().scale(scale).ticks(10).orient("left");
-			clist.append("svg:rect")
-				.attr("fill", "url(#grad)")
-				.attr("x", 30)
-				.attr("width", 30)
-				.attr("height", clisth);//height - h2 - 5*margin);
-			clist.append("svg:g")
-				.attr("transform", "translate(30,0)")
-				.classed("axis", true)
-				.call(axis);
-			clist.append("svg:text")
-				.classed("expl", true)
-				.attr("transform", "translate(0," + (clisth + margin) + ")")
-				.text("% of total weekly volume of birds")
+				  positions2 = [];	
 			
-			//add color on the bar    
-            var grad = defs.append("svg:linearGradient")
-				.attr("id", "grad")
-				.attr("x1", "100%")
-				.attr("x2", "100%")
-				.attr("y1", "100%")
-				.attr("y2", "0%")
-				.attr("spreadMethod", "pad");
-			grad.append("svg:stop")
-				.attr("offset", "0%")
-				.attr("stop-color", "rgb(237,248,233)");
-			grad.append("svg:stop")
-				.attr("offset", "100%")
-				.attr("stop-color", "rgb(0,109,44)");
- */           
-            function updateMapJKT(js) {
-				if(map.selectAll("path").empty()) {
-                    gjkt.append("g")
-                    	.selectAll("path")
-						.data(js.features)
-						.enter()
-						.append("path")
-						.attr("d", path)
-						.style("fill", setNormalColor)
-						.style("stroke", "rgb(0,109,44)")
-						.on("mouseover", function(d)
-							{
-								//get the origin cities based on selected destination
-								var oricity = getOriginCity(d);
-								var dt = function(dest,ori) 
-								{
-
-									var result = [];
-									var n = 0;
-									for (var i = 0; i < ori.length; i++)
-									{
-
-										 var dataState = ori[i];
-										 //Find the corresponding state inside the GeoJSON
-										for (var j = 0; j < dest.features.length; j++)
-										{
-											var jsonState = dest.features[j].properties.KABKOT;
-											if (dataState == jsonState ) {
-												result[n] = dest.features[j];
-												n = n + 1;
-												break;
-											}
-										}
-									}
-									return result
-								}; 
-								
-								//generate all selected origin city on Java Map
-								dt_res = dt(javjson,oricity); 
-								map2.selectAll("path")
-									.data(dt_res, function(d) { 
-										return d.properties.OBJECTID; })
-									.style("fill", "blue")//color(js.properties.value))
-									.attr("stroke-width", 2);
-								//end of generation
-	
-								d3.select(this)
-										.style("fill", "orange");
-
-								var coordinates = [0, 0];
-									coordinates = d3.mouse(this);
-		
-								var target = d3.select("#tooltip")
-										.style("left", coordinates[0] + "px")
-										.style("top", coordinates[1] + "px");
-									target.select("#daerah")
-										.text("DESTINATION :"+d.properties.KAB_KOTA);
-
-									target.select("#info")
-										//.text("Weekly Volume of Birds: " + d.properties.value + " (" + Math.round(d.properties.value)/1000 + " % )");
-										.text(getInfo(d))								
-								
-								//Show tooltip
-								d3.select("#tooltip").classed("hidden", false);
-								
-								//generate table info
-								var JavTable = tabulate(datamovjak, ["CY_district", "district_org_source", "tot"]);
-								
-										})
-						.on("mouseout", function(d){
-									d3.select(this).style("fill", setNormalColor(d));
-									d3.select("#tooltip").classed("hidden", true);	//hide
-									
-									//remove selection on Java Map
-									map2.selectAll("path")
-									.style("fill", setNormalColor)
-									.attr("stroke-width", 1);
-									//end removal section
-									
-									d3.select("table").remove();
-								})
-						.on("click", function(d){clicked(d,jktw,jkth,gjkt)});	
-					
-				} else {
-//console.log(js.properties)
-					label.selectAll("text").remove();
-					label.append("svg:text")
-						.attr("y", -10)
-						.classed("label", true)
-						.text(js.properties.KAB_KOTA + " has : " + Math.round(js.properties.value)/1000 + "% of total birds populations");
-					map.selectAll("path")
-						//.attr("fill", "none")
-						.style("fill", setNormalColor)
-						.attr("stroke-width", 1);
-					map.selectAll("path")
-						.data([js], function(d) { return d.properties.OBJECTID; })
-						.style("fill", "orange")//color(js.properties.value))
-						.attr("stroke-width", 2);
-				}	
-			}
-
-            function updateMapJAVA(js) {
-				if(map2.selectAll("path").empty()) {
-                    gjw.append("g").selectAll("path")
-                       .data(js.features)
-                       .enter()
-                       .append("path")
-                       .attr("d", path2)
-                       .style("fill", setNormalColor)
-                       .style("stroke", "rgb(0,109,44)")
-                       .on("mouseover", function(d)
-                            {
-                                //get the origin cities based on selected destination
-								var destcity = getDestCity(d);
-
-								
-								var dt = function(ori, dest) 
-								{
-
-									var result = [];
-									var n = 0;
-									for (var i = 0; i < dest.length; i++)
-									{
-
-										 var dataState = dest[i];
-										 //Find the corresponding state inside the GeoJSON
-										for (var j = 0; j < ori.features.length; j++)
-										{
-											var jsonState = ori.features[j].properties.KAB_KOTA;
-											if (dataState == jsonState ) {
-												result[n] = ori.features[j];
-												n = n + 1;
-												break;
-											}
-										}
-									}
-									return result
-								}; 
-								
-								//generate all selected origin city on Java Map
-								dt_ori = dt(jakjson, destcity); 
-
-								map.selectAll("path")
-									.data(dt_ori, function(d) { return d.properties.OBJECTID; })
-									.style("fill", "red")//color(js.properties.value))
-									.attr("stroke-width", 2);
-								//end of generation
-								
-                                
-                                d3.select(this).style("fill", "orange");
-
-                                var coordinates = [0, 0];
-                                	coordinates = d3.mouse(this);
-                                var target = d3.select("#tooltip")
-                                    .style("left", coordinates[0] + 80 + "px")
-                                    .style("top", coordinates[1] + jkth + "px");
-
-                                target.select("#daerah").text("Origin : "+d.properties.KABKOT+" - Province: " + d.properties.PROVINSI);
-                                target.select("#info").text(getInfo2(d));
-								//Show tooltip
-								d3.select("#tooltip").classed("hidden", false);
-								
-								//generate table info
-								var JavTable = tabulate(datamovjav, ["CY_district", "district_org_source", "tot"]);
-
-							})
-                    	.on("mouseout", function(d){
-                                d3.select(this).style("fill", setNormalColor(d));
-                                d3.select("#tooltip").classed("hidden", true);
-                                
-                                //remove selection on Java Map
-									map.selectAll("path")
-									.style("fill", setNormalColor)
-									.attr("stroke-width", 1);
-									//end removal section
-								
-								d3.select("table").remove();
-                            })
-                        .on("click", function(d){clicked(d,jww,jwh,gjw)});;
-					
-				} else {
-					map2.selectAll("path")
-						//.attr("fill", "none")
-						.style("fill", setNormalColor)
-						.attr("stroke-width", 1);
-					map2.selectAll("path")
-						.data([js[0]], function(d) { 
-							return d.properties.OBJECTID; })
-						.style("fill", "orange")//color(js.properties.value))
-						.attr("stroke-width", 2);
-				}	
-			} 
-			
-			var setNormalColor = function(d)
+            var setNormalColor = function(d)
             {
                 //Get data value
                   var value = d.properties.value;
@@ -506,69 +248,6 @@
                         	return "white";
                     }
             }
-            
-            function clicked(d,w,h, gpath) 
-            {
-
-				var centroid = path.centroid(d),
-				  translate = projection.translate();
-
-				projection.translate([
-				translate[0] - centroid[0] + w / 2,
-				translate[1] - centroid[1] + h / 2
-				]);
-
-				zoom.translate(projection.translate());
-
-				gpath.selectAll("path").transition()
-				  .duration(700)
-				  .attr("d", path);
-			}
-
-			function zoomed() //zoom function for jkt
-			{
-				projection.translate(d3.event.translate).scale(d3.event.scale);
-				gjkt.selectAll("path").attr("d", path);
-			}
-			
-			function zoomed2() //zoom function for Java
-			{
-				projection2.translate(d3.event.translate).scale(d3.event.scale);
-				gjw.selectAll("path").attr("d", path2);
-			}
-            
-            //show City
-            var showCity = function(cities, whmap, pos, color)
-			{		
-				
-				/* Define the data for the circles */
-				var elem = whmap.selectAll("circle")
-								.data(cities)
-
-				/*Create and place the "blocks" containing the circle and the text */  
-				var elemEnter = elem.enter()
-					.append("g")
-					.attr("transform", function(d,i){return "translate("+pos[i][0]+","+pos[i][1]+" )"})
-				
-				/*Create the circle for each block */
-				var circle = elemEnter.append("circle")
-									.style("stroke", "gray")
-									.style("fill", color)
-									.attr("r", 5)//function(d, i) { return Math.sqrt(countByCity[d.Name]); })
-									//.sort(function(a, b) { return countByCity[b.Name] - countByCity[a.Name]; })
-
-				/* Create the text for each block */
-				/*elemEnter.append("text")
-						.text(function(d){
-							return d.Name;})
-						.attr("dx", function(d){return 0})
-						.attr("dy", function(d){return 20})
-						.attr({
-							  "alignment-baseline": "middle",
-							  "text-anchor": "middle"
-							})
-				*/
-			}
             
             //function to get distinguish origin area
             var getOriginCity = function (d) 
@@ -739,7 +418,281 @@
 					
 			}
 			
-			var drawthecity = function (data_value, whmap, pos, color)
+			//global variable to store data movement csv
+			var data = function()
+			{
+				//Get data from CSV file
+				//The d3.csv() function does both the loading and the parsing without giving you a chance to intervene so we need to do this
+				d3.xhr('Movement.csv').get(function (err, response) 
+				{
+					// to delete the first row and get the header
+					var dirtyCSV = response.responseText;
+					var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
+					return d3.csv.parse(cleanCSV); 
+				})
+			}
+			
+			function updateMapJKT(js) 
+			{
+				if(map.selectAll("path").empty()) {
+                    gjkt.append("g")
+                    	.selectAll("path")
+						.data(js.features)
+						.enter()
+						.append("path")
+						.attr("d", path)
+						.style("fill", setNormalColor)
+						.style("stroke", "rgb(0,109,44)")
+						.on("mouseover", function(d)
+							{
+								//get the origin cities based on selected destination
+								var oricity = getOriginCity(d);
+								var dt = function(dest,ori) 
+								{
+
+									var result = [];
+									var n = 0;
+									for (var i = 0; i < ori.length; i++)
+									{
+
+										 var dataState = ori[i];
+										 //Find the corresponding state inside the GeoJSON
+										for (var j = 0; j < dest.features.length; j++)
+										{
+											var jsonState = dest.features[j].properties.KABKOT;
+											if (dataState == jsonState ) {
+												result[n] = dest.features[j];
+												n = n + 1;
+												break;
+											}
+										}
+									}
+									return result
+								}; 
+								
+								//generate all selected origin city on Java Map
+								dt_res = dt(javjson,oricity); 
+								map2.selectAll("path")
+									.data(dt_res, function(d) { 
+										return d.properties.OBJECTID; })
+									.style("fill", "blue")//color(js.properties.value))
+									.attr("stroke-width", 2);
+								//end of generation
+	
+								d3.select(this)
+										.style("fill", "orange");
+
+								var coordinates = [0, 0];
+									coordinates = d3.mouse(this);
+		
+								var target = d3.select("#tooltip")
+										.style("left", coordinates[0] + "px")
+										.style("top", coordinates[1] + "px");
+									target.select("#daerah")
+										.text("DESTINATION :"+d.properties.KAB_KOTA);
+
+									target.select("#info")
+										//.text("Weekly Volume of Birds: " + d.properties.value + " (" + Math.round(d.properties.value)/1000 + " % )");
+										.text(getInfo(d))								
+								
+								//Show tooltip
+								d3.select("#tooltip").classed("hidden", false);
+								
+								//generate table info
+								var JavTable = tabulate(datamovjak, ["district_org_source", "CY_district",  "tot"]);
+								
+										})
+						.on("mouseout", function(d){
+									d3.select(this).style("fill", setNormalColor(d));
+									d3.select("#tooltip").classed("hidden", true);	//hide
+									
+									//remove selection on Java Map
+									map2.selectAll("path")
+									.style("fill", setNormalColor)
+									.attr("stroke-width", 1);
+									//end removal section
+									
+									d3.select("table").remove();
+								})
+						.on("click", function(d){clicked(d,jktw,jkth,gjkt)});	
+					
+				} else {
+//console.log(js.properties)
+					label.selectAll("text").remove();
+					label.append("svg:text")
+						.attr("y", -10)
+						.classed("label", true)
+						.text(js.properties.KAB_KOTA + " has : " + Math.round(js.properties.value)/1000 + "% of total birds populations");
+					map.selectAll("path")
+						//.attr("fill", "none")
+						.style("fill", setNormalColor)
+						.attr("stroke-width", 1);
+					map.selectAll("path")
+						.data([js], function(d) { return d.properties.OBJECTID; })
+						.style("fill", "orange")//color(js.properties.value))
+						.attr("stroke-width", 2);
+				}	
+			}
+
+            function updateMapJAVA(js) 
+            {
+				if(map2.selectAll("path").empty()) {
+                    gjw.append("g").selectAll("path")
+                       .data(js.features)
+                       .enter()
+                       .append("path")
+                       .attr("d", path2)
+                       .style("fill", setNormalColor)
+                       .style("stroke", "rgb(0,109,44)")
+                       .on("mouseover", function(d)
+                            {
+                                //get the origin cities based on selected destination
+								var destcity = getDestCity(d);
+
+								
+								var dt = function(ori, dest) 
+								{
+
+									var result = [];
+									var n = 0;
+									for (var i = 0; i < dest.length; i++)
+									{
+
+										 var dataState = dest[i];
+										 //Find the corresponding state inside the GeoJSON
+										for (var j = 0; j < ori.features.length; j++)
+										{
+											var jsonState = ori.features[j].properties.KAB_KOTA;
+											if (dataState == jsonState ) {
+												result[n] = ori.features[j];
+												n = n + 1;
+												break;
+											}
+										}
+									}
+									return result
+								}; 
+								
+								//generate all selected origin city on Java Map
+								dt_ori = dt(jakjson, destcity); 
+
+								map.selectAll("path")
+									.data(dt_ori, function(d) { return d.properties.OBJECTID; })
+									.style("fill", "red")//color(js.properties.value))
+									.attr("stroke-width", 2);
+								//end of generation
+								
+                                
+                                d3.select(this).style("fill", "orange");
+
+                                var coordinates = [0, 0];
+                                	coordinates = d3.mouse(this);
+                                var target = d3.select("#tooltip")
+                                    .style("left", coordinates[0] + 80 + "px")
+                                    .style("top", coordinates[1] + jkth + "px");
+
+                                target.select("#daerah").text("Origin : "+d.properties.KABKOT+" - " + d.properties.PROVINSI);
+                                target.select("#info").text(getInfo2(d));
+								//Show tooltip
+								d3.select("#tooltip").classed("hidden", false);
+								
+								//generate table info
+								var JavTable = tabulate(datamovjav, ["district_org_source", "CY_district", "tot"]);
+
+							})
+                    	.on("mouseout", function(d){
+                                d3.select(this).style("fill", setNormalColor(d));
+                                d3.select("#tooltip").classed("hidden", true);
+                                
+                                //remove selection on Java Map
+									map.selectAll("path")
+									.style("fill", setNormalColor)
+									.attr("stroke-width", 1);
+									//end removal section
+								
+								d3.select("table").remove();
+                            })
+                        .on("click", function(d){clicked(d,jww,jwh,gjw)});;
+					
+				} else {
+					map2.selectAll("path")
+						//.attr("fill", "none")
+						.style("fill", setNormalColor)
+						.attr("stroke-width", 1);
+					map2.selectAll("path")
+						.data([js[0]], function(d) { 
+							return d.properties.OBJECTID; })
+						.style("fill", "orange")//color(js.properties.value))
+						.attr("stroke-width", 2);
+				}	
+			} 
+			            
+            function clicked(d,w,h, gpath) 
+            {
+
+				var centroid = path.centroid(d),
+				  translate = projection.translate();
+
+				projection.translate([
+				translate[0] - centroid[0] + w / 2,
+				translate[1] - centroid[1] + h / 2
+				]);
+
+				zoom.translate(projection.translate());
+
+				gpath.selectAll("path").transition()
+				  .duration(700)
+				  .attr("d", path);
+			}
+
+			//zoom function for jkt
+			function zoomed() 
+			{
+				projection.translate(d3.event.translate).scale(d3.event.scale);
+				gjkt.selectAll("path").attr("d", path);
+			}
+			
+			//zoom function for Java
+			function zoomed2() 
+			{
+				projection2.translate(d3.event.translate).scale(d3.event.scale);
+				gjw.selectAll("path").attr("d", path2);
+			}
+            
+            //show City
+            function showCity(cities, whmap, pos, color)
+			{		
+				
+				/* Define the data for the circles */
+				var elem = whmap.selectAll("circle")
+								.data(cities)
+
+				/*Create and place the "blocks" containing the circle and the text */  
+				var elemEnter = elem.enter()
+					.append("g")
+					.attr("transform", function(d,i){return "translate("+pos[i][0]+","+pos[i][1]+" )"})
+				
+				/*Create the circle for each block */
+				var circle = elemEnter.append("circle")
+									.style("stroke", "gray")
+									.style("fill", color)
+									.attr("r", 5)//function(d, i) { return Math.sqrt(countByCity[d.Name]); })
+									//.sort(function(a, b) { return countByCity[b.Name] - countByCity[a.Name]; })
+
+				/* Create the text for each block */
+				/*elemEnter.append("text")
+						.text(function(d){
+							return d.Name;})
+						.attr("dx", function(d){return 0})
+						.attr("dy", function(d){return 20})
+						.attr({
+							  "alignment-baseline": "middle",
+							  "text-anchor": "middle"
+							})
+				*/
+			}
+			
+			function drawthecity(data_value, whmap, pos, color)
 			{
 //console.log(data_value)
 				whmap.selectAll("circle")
@@ -779,7 +732,7 @@
 						
 			}
 			
-			var cityextraction = function (datajson, pos, proj, shape, citycolor)
+			function cityextraction(datajson, pos, proj, shape, citycolor)
 			{
 				var arc = d3.geo.greatArc()
 					  .source(function(d) { return locationByCity[d.source]; })
@@ -880,7 +833,7 @@
 					});	
 			};
 				
-			var districtextraction = function (datajson, pos, proj, shape, citycolor)
+			function districtextraction(datajson, pos, proj, shape, citycolor)
 			{
 				var arc = d3.geo.greatArc()
 					  .source(function(d) { return locationByCity[d.source]; })
@@ -971,103 +924,118 @@
 							});
 						});
 					});	
-			};	
+			};
+			
+			// The table generation function
+			function tabulate(data, columns) 
+			{
+	//console.log(data)
+				var table = clist.append("foreignObject")
+					.attr("x", 0)
+					.attr("y", 0)
+					.attr("width", 250)
+					.attr("height",jktw)
+				.append("xhtml:body")
+						.append("table")
+						.attr("style", "margin-left: 0px"),
+					thead = table.append("thead"),
+					tbody = table.append("tbody");
 
-            
-            
-            //added jabodetabek map
-            d3.json("jakarta.json", function(json) {
-				
-				//Get data from CSV file
-				//The d3.csv() function does both the loading and the parsing without giving you a chance to intervene so we need to do this
-				d3.xhr('Movement.csv').get(function (err, response) {
-				  // to delete the first row and get the header
-				  var dirtyCSV = response.responseText;
-				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
-				  data = d3.csv.parse(cleanCSV); //global variable
-				
-                //enable this when header csv in the first row
-                //d3.csv("test.csv", function(data){
-                    color.domain([
-                        d3.min(data, function(d) { return d.weekly_volume; }),
-                        d3.max(data, function(d) { return d.weekly_volume; })
-                        ]);
+				// append the header row
+				thead.append("tr")
+					.selectAll("th")
+					.data(columns)
+					.enter()
+					.append("th")
+						.text(function(column) 
+						{ 
+	//console.log(column)
+							if (column == "CY_district"){column = "Area Destination"}
+							if (column == "district_org_source"){column = "Area Origin"}
+							if (column == "tot"){column = "Total Weekly Volume"}
+						
+							return column; 
+						});
 
-                    for (var i = 0; i < data.length; i++)
-                    {
-                        var dataState = data[i].CY_district;
-                        var dataValue = parseInt(data[i].weekly_volume);
+				// create a row for each object in the data
+				var rows = tbody.selectAll("tr")
+					.data(data)
+					.enter()
+					.append("tr");
 
-                         //Find the corresponding state inside the GeoJSON
-                        for (var j = 0; j < json.features.length; j++)
-                        {
-                            var jsonState = json.features[j].properties.KAB_KOTA;
-                            if (dataState == jsonState ) {
-                                //Copy the data value into the JSON
-                                json.features[j].properties.value = dataValue;
-                                //Stop looking through the JSON
-                                break;
-                            }
-                        }
-                    }
-/*				
-					//add information of Kab_Kota from JABODETABEK map into the bar chart list
-					var areadistrict = json.features.filter(function(d, i) {
-							return d.properties.value != null;
-							}).sort(function(a, b) { return b.properties.value - a.properties.value; }),
-						ch = clisth / (areadistrict.length+1);
-					clist.selectAll("text.label")
-						.data(areadistrict)
-						.enter()
-						.append("svg:text")
-						.classed("label", true)
-						.attr("transform", function(d, i) {
-								return "translate(100," + ((i+1) * ch + 5) + ")";
-							})
-						.text(function(d) { return d.properties.KAB_KOTA; })
-						.on("mouseover", function(d) {
-								d3.selectAll(".active").classed("active", false);
-								d3.select(d3.event.target).classed("active", true);
-								var check_kota = d.properties.KAB_KOTA;
+				// create a cell in each row for each column
+				var cells = rows.selectAll("td")
+					.data(function(row) {
+						return columns.map(function(column) {
+							return {column: column, value: row[column]};
+						});
+					})
+					.enter()
+					.append("td")
+					.attr("style", "font-family: Courier") // sets the font style
+						.html(function(d) { return d.value; });
 	
-								updateMapJKT(d);
-								updateMapJAVA(javjson.features.filter(function(d, i) {
-									return d.properties.KABKOT == check_kota;})); 	
-							})
-						.on("mouseout", function(d){
-								d3.selectAll(".active").classed("active", false);
-								map.selectAll("path")
-									.style("fill", setNormalColor)
-									.style("stroke", "rgb(0,109,44)");
-								map2.selectAll("path")
-									.style("fill", setNormalColor)
-									.style("stroke", "rgb(0,109,44)");
-								label.selectAll("text").remove();
-							});
-				
-					//draw the connector line between the area and bar chart		
-					var l = d3.svg.line();
-						clist.selectAll("path.pointer")
-							.data(areadistrict)
-							.enter()
-							.append("svg:path")
-							.classed("pointer", true)
-							.attr("fill", "none")
-							.attr("d", function(d, i) {
-									var s = [25, scale(d.properties.value / 1000)],
-										m = [65, scale(d.properties.value / 1000)],
-										e = [95, (i+1) * ch];
-									return l([s, m, e]);
-								});
-*/							
-					//generate dot points as cities positions
-					//districtextraction(json, positions, projection, circles, "red")
-					jakjson = json;
-					updateMapJKT(json);
-									      
-				});
-				
-				//load dropdown menu for filter
+				return table;
+			}
+			
+			//added title and other information for the interfaces
+			function titleinterface()
+			{
+				svg.append("svg:text")
+					.classed("title", true)
+					.attr("text-anchor", "start")
+					.attr("x", 1.5*margin)
+					.attr("y", 1*margin)
+					.text("Weekly Volume Distribution of Birds into JABODETABEK ");
+				svg.append("svg:text")
+					.attr("text-anchor", "start")
+					.attr("y", height-5)
+					.text("Spreading birds data 2015");
+				svg.append("svg:text")
+					.attr("text-anchor", "end")
+					.attr("x", width)
+					.attr("y", height-5)
+					.text("@Urremote.com 2015");
+			}
+			
+			//create scale bar graph
+			function scalegraph()
+			{			
+				var scale = d3.scale.linear().domain([0, 100]).range([clisth, 0]),
+					axis = d3.svg.axis().scale(scale).ticks(10).orient("left");
+				clist.append("svg:rect")
+					.attr("fill", "url(#grad)")
+					.attr("x", 30)
+					.attr("width", 30)
+					.attr("height", clisth);//height - h2 - 5*margin);
+				clist.append("svg:g")
+					.attr("transform", "translate(30,0)")
+					.classed("axis", true)
+					.call(axis);
+				clist.append("svg:text")
+					.classed("expl", true)
+					.attr("transform", "translate(0," + (clisth + margin) + ")")
+					.text("% of total weekly volume of birds")
+			
+				//add color on the bar    
+				var grad = defs.append("svg:linearGradient")
+					.attr("id", "grad")
+					.attr("x1", "100%")
+					.attr("x2", "100%")
+					.attr("y1", "100%")
+					.attr("y2", "0%")
+					.attr("spreadMethod", "pad");
+				grad.append("svg:stop")
+					.attr("offset", "0%")
+					.attr("stop-color", "rgb(237,248,233)");
+				grad.append("svg:stop")
+					.attr("offset", "100%")
+					.attr("stop-color", "rgb(0,109,44)");
+			}
+			
+			//load dropdown menu for filter
+			function dropdownmenu1()
+			{
 				var dispatch = d3.dispatch("load", "countrychange");
 
 				d3.xhr('Movement.csv').get(function (err, response) 
@@ -1116,15 +1084,156 @@
 				  });
 				});
 				//end of drop down
-				
-				
+			}
+			
+			function dropdownmenu2()
+			{
+				var dispatch = d3.dispatch("load", "countrychange");
 
+				d3.xhr('Movement.csv').get(function (err, response) 
+				{
+				  //if (error) throw error;
+				  var dirtyCSV = response.responseText;
+				  var cleanCSV = dirtyCSV.split('\n').slice(1).join('\n');
+				  data = d3.csv.parse(cleanCSV);
+				  var countryById = d3.map();
+				  data.forEach(function (d) 
+				  { 
+					countryById.set(d.Type_movement_IN_or_OUT, d); 
+				  });
+				  dispatch.load(countryById);
+				  //dispatch.countrychange(countryById.get("PH"));
+			  
+				});
+								
+				dispatch.on("load.menu", function(countryById) {
+				  var select = svg.append("foreignObject")
+				  	.attr("x", 1.5*margin+200)
+					.attr("y", 2*margin)
+					.attr("width", 500)
+					.attr("height",30)
+					.append("xhtml:body")
+					.append("div")
+					.text("Filter by MOVEMENT : ")
+					.append("select")
+					.on("change", function () { dispatch.countrychange(countryById.get(this.value)); });
+
+				  select.selectAll("option")
+					.data(countryById.values())
+					.enter().append("option")
+					.attr("value", function (d) { return d.Type_movement_IN_or_OUT; })
+					.text(function (d) { return d.Type_movement_IN_or_OUT; });
+
+				  dispatch.on("countrychange.menu", function (country) {
+					  select.property("value", country)
+					  //loading the value based on the selected data
+					  var svg1 = d3.select("body").append("svg1")
+							.attr("width", width)
+							.attr("height", height)
+					  //end of selection
+
+//console.log(country);
+				  });
+				});
+				//end of drop down
+			}
+            
+            //set the interface
+            //added  title for the interface
+            titleinterface()
+            
+            //added graph bar
+            //scalegraph()
+            
+            //added dropdownmenu for filter based on Species
+            dropdownmenu1()
+            dropdownmenu2()
+            
+            //added jabodetabek map
+            d3.json("jakarta.json", function(json) {
+				
+				color.domain([
+					d3.min(data, function(d) { return d.weekly_volume; }),
+					d3.max(data, function(d) { return d.weekly_volume; })
+					]);
+
+				for (var i = 0; i < data.length; i++)
+				{
+					var dataState = data[i].CY_district;
+					var dataValue = parseInt(data[i].weekly_volume);
+
+					 //Find the corresponding state inside the GeoJSON
+					for (var j = 0; j < json.features.length; j++)
+					{
+						var jsonState = json.features[j].properties.KAB_KOTA;
+						if (dataState == jsonState ) {
+							//Copy the data value into the JSON
+							json.features[j].properties.value = dataValue;
+							//Stop looking through the JSON
+							break;
+						}
+					}
+				}
+/*				
+				//add information of Kab_Kota from JABODETABEK map into the bar chart list
+				var areadistrict = json.features.filter(function(d, i) {
+						return d.properties.value != null;
+						}).sort(function(a, b) { return b.properties.value - a.properties.value; }),
+					ch = clisth / (areadistrict.length+1);
+				clist.selectAll("text.label")
+					.data(areadistrict)
+					.enter()
+					.append("svg:text")
+					.classed("label", true)
+					.attr("transform", function(d, i) {
+							return "translate(100," + ((i+1) * ch + 5) + ")";
+						})
+					.text(function(d) { return d.properties.KAB_KOTA; })
+					.on("mouseover", function(d) {
+							d3.selectAll(".active").classed("active", false);
+							d3.select(d3.event.target).classed("active", true);
+							var check_kota = d.properties.KAB_KOTA;
+
+							updateMapJKT(d);
+							updateMapJAVA(javjson.features.filter(function(d, i) {
+								return d.properties.KABKOT == check_kota;})); 	
+						})
+					.on("mouseout", function(d){
+							d3.selectAll(".active").classed("active", false);
+							map.selectAll("path")
+								.style("fill", setNormalColor)
+								.style("stroke", "rgb(0,109,44)");
+							map2.selectAll("path")
+								.style("fill", setNormalColor)
+								.style("stroke", "rgb(0,109,44)");
+							label.selectAll("text").remove();
+						});
+			
+				//draw the connector line between the area and bar chart		
+				var l = d3.svg.line();
+					clist.selectAll("path.pointer")
+						.data(areadistrict)
+						.enter()
+						.append("svg:path")
+						.classed("pointer", true)
+						.attr("fill", "none")
+						.attr("d", function(d, i) {
+								var s = [25, scale(d.properties.value / 1000)],
+									m = [65, scale(d.properties.value / 1000)],
+									e = [95, (i+1) * ch];
+								return l([s, m, e]);
+							});
+*/							
+				//generate dot points as cities positions
+				//districtextraction(json, positions, projection, circles, "red")
+				jakjson = json;
+				updateMapJKT(json);
+									      
 				 
             });
-
-            
+                   
         	// generate SVG for second Geojson MAP (java island)  
-           d3.json("Java_District.geojson", function(json) {
+			d3.json("Java_District.geojson", function(json) {
 				
 				//match data (variable global assigned on jkt-json) from CSV file and map				
 				for (var i = 0; i < data.length; i++)
@@ -1165,63 +1274,7 @@
 	
 				
             });
-            
-            
-           // The table generation function
-		function tabulate(data, columns) 
-		{
-//console.log(data)
-			var table = clist.append("foreignObject")
-				.attr("x", 0)
-				.attr("y", 0)
-				.attr("width", 250)
-				.attr("height",jktw)
-			.append("xhtml:body")
-					.append("table")
-					.attr("style", "margin-left: 0px"),
-				thead = table.append("thead"),
-				tbody = table.append("tbody");
-
-			// append the header row
-			thead.append("tr")
-				.selectAll("th")
-				.data(columns)
-				.enter()
-				.append("th")
-					.text(function(column) 
-					{ 
-//console.log(column)
-						if (column == "CY_district"){column = "Area Destination"}
-						if (column == "district_org_source"){column = "Area Origin"}
-						if (column == "tot"){column = "Total Weekly Volume"}
-						
-						return column; 
-					});
-
-			// create a row for each object in the data
-			var rows = tbody.selectAll("tr")
-				.data(data)
-				.enter()
-				.append("tr");
-
-			// create a cell in each row for each column
-			var cells = rows.selectAll("td")
-				.data(function(row) {
-					return columns.map(function(column) {
-						return {column: column, value: row[column]};
-					});
-				})
-				.enter()
-				.append("td")
-				.attr("style", "font-family: Courier") // sets the font style
-					.html(function(d) { return d.value; });
-	
-			return table;
-		}
-
-		
- 
-            
+                        
         </script>
 
     </body>
